@@ -35,7 +35,7 @@ class HashVerifier:
     def __init__(self, filepath):
         self.filepath = filepath
         self.window = tk.Tk()
-        self.window.title("Hash Verifier v0.1")
+        self.window.title("Hash Verifier v0.0.1")
         self.window.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         self.window.resizable(True, True)
 
