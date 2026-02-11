@@ -6,7 +6,7 @@ import shutil
 import tkinter as tk
 from tkinter import messagebox
 
-# DPI Awareness
+# Enable DPI awareness for high-resolution displays
 try:
     ctypes.windll.shcore.SetProcessDpiAwarenessContext(-2)
 except (AttributeError, OSError):
@@ -18,21 +18,20 @@ except (AttributeError, OSError):
         except (AttributeError, OSError):
             pass
 
-
-# Constants
+# Application constants
 WINDOW_WIDTH = 700
 WINDOW_HEIGHT = 760
 
 
-
 class Installer:
-    """
-    Installer for Hash Verifier that copies files to Program Files
-    and adds a context menu entry for file hash verification.
+    """Windows installer for Hash Verifier application.
+    
+    Copies HashVerifier.exe to Program Files and registers a Windows Explorer
+    context menu entry for all files. Requires administrator privileges.
     """
     
     def __init__(self):
-        """Initialize installer and check for admin privileges."""
+        """Initialize installer and elevate to administrator if needed."""
         if not self.is_admin():
             self.run_as_admin()
             sys.exit(0)
@@ -49,20 +48,22 @@ class Installer:
         self.setup_gui()
     
     def get_current_dir(self):
-        """
-        Get the directory where the installer is running from.
+        """Get the directory containing the installer executable.
         
-        :return: Directory path
+        Returns:
+            Absolute path to installer directory
         """
         if getattr(sys, 'frozen', False):
+            # Running as compiled executable
             return os.path.dirname(sys.executable)
+        # Running as Python script
         return os.path.dirname(os.path.abspath(__file__))
     
     def is_admin(self):
-        """
-        Check if running with administrator privileges.
+        """Check if process has administrator privileges.
         
-        :return: True if admin, False otherwise
+        Returns:
+            True if running as administrator, False otherwise
         """
         try:
             return ctypes.windll.shell32.IsUserAnAdmin()
@@ -70,13 +71,19 @@ class Installer:
             return False
     
     def run_as_admin(self):
-        """Restart the program with administrator privileges."""
+        """Relaunch the installer with administrator privileges via UAC prompt.
+        
+        Raises:
+            SystemExit: Always exits after triggering elevation
+        """
         try:
             if getattr(sys, 'frozen', False):
+                # Relaunch compiled executable
                 ctypes.windll.shell32.ShellExecuteW(
                     None, "runas", sys.executable, "", None, 1
                 )
             else:
+                # Relaunch Python script
                 ctypes.windll.shell32.ShellExecuteW(
                     None, "runas", sys.executable, f'"{__file__}"', None, 1
                 )
@@ -85,10 +92,11 @@ class Installer:
             sys.exit(1)
     
     def setup_gui(self):
-        """Set up the graphical user interface."""
+        """Construct the installer GUI with installation details and controls."""
         main_frame = tk.Frame(self.window, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Introduction text
         info = tk.Label(main_frame,
             text="This will install Hash Verifier to your system and add\n"
                  "'Verify Hash' to the right-click context menu for all files.\n\n"
@@ -97,10 +105,12 @@ class Installer:
             justify=tk.LEFT)
         info.pack(anchor=tk.W, pady=(0, 20))
         
+        # Installation details panel
         details_frame = tk.LabelFrame(main_frame, text="Installation Details",
             padx=15, pady=15, font=("Segoe UI", 9, "bold"))
         details_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
         
+        # Check if HashVerifier.exe exists in current directory
         if os.path.exists(self.hash_verifier_source):
             status_label = tk.Label(details_frame, text="✓ HashVerifier.exe found",
                 font=("Segoe UI", 9), fg="#00aa00")
@@ -109,6 +119,7 @@ class Installer:
                 font=("Segoe UI", 9, "bold"), fg="#cc0000")
         status_label.pack(anchor=tk.W, pady=(0, 10))
         
+        # Installation path
         tk.Label(details_frame, text="Install location:",
             font=("Segoe UI", 9, "bold")).pack(anchor=tk.W, pady=(5, 2))
         
@@ -118,11 +129,13 @@ class Installer:
         install_display.config(state=tk.DISABLED)
         install_display.pack(fill=tk.X, pady=(0, 10))
         
+        # Files to be installed
         tk.Label(details_frame, text="Files to install:",
             font=("Segoe UI", 9, "bold")).pack(anchor=tk.W, pady=(5, 2))
         tk.Label(details_frame, text="• HashVerifier.exe (~15 MB)",
             font=("Segoe UI", 9)).pack(anchor=tk.W, padx=(10, 0))
         
+        # Registry modification details
         tk.Label(details_frame, text="Registry location:",
             font=("Segoe UI", 9, "bold")).pack(anchor=tk.W, pady=(10, 2))
         
@@ -133,11 +146,13 @@ class Installer:
         reg_display.config(state=tk.DISABLED)
         reg_display.pack(fill=tk.X, pady=(0, 5))
         
+        # Context menu entry preview
         tk.Label(details_frame, text="Context menu entry:",
             font=("Segoe UI", 9, "bold")).pack(anchor=tk.W, pady=(10, 2))
         tk.Label(details_frame, text="'Verify Hash' (right-click any file)",
             font=("Segoe UI", 9), fg="#0066cc").pack(anchor=tk.W)
         
+        # Action buttons
         button_frame = tk.Frame(main_frame)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
         
@@ -151,11 +166,16 @@ class Installer:
             font=("Segoe UI", 9, "bold"))
         self.install_btn.pack(side=tk.RIGHT)
         
+        # Disable install button if HashVerifier.exe is missing
         if not os.path.exists(self.hash_verifier_source):
             self.install_btn.config(state=tk.DISABLED)
     
     def install(self):
-        """Perform the installation process."""
+        """Execute the installation process.
+        
+        Copies HashVerifier.exe to Program Files and creates registry entries
+        for Windows Explorer context menu integration.
+        """
         if not os.path.exists(self.hash_verifier_source):
             messagebox.showerror("Error",
                 "HashVerifier.exe not found!\n\n"
@@ -164,18 +184,22 @@ class Installer:
             return
         
         try:
+            # Create installation directory
             os.makedirs(self.install_dir, exist_ok=True)
             
+            # Copy executable to Program Files
             dest_path = os.path.join(self.install_dir, "HashVerifier.exe")
             shutil.copy2(self.hash_verifier_source, dest_path)
             
+            # Register context menu entry in Windows Registry
+            # Using HKEY_CURRENT_USER to avoid requiring full admin rights
             key_path = r"Software\Classes\*\shell\HashVerifier"
-            
             key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path)
             winreg.SetValueEx(key, "", 0, winreg.REG_SZ, "Verify Hash")
             winreg.SetValueEx(key, "Icon", 0, winreg.REG_SZ, f'"{dest_path}",0')
             winreg.CloseKey(key)
             
+            # Set command to execute when context menu item is clicked
             command_key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path + r"\command")
             winreg.SetValueEx(command_key, "", 0, winreg.REG_SZ, f'"{dest_path}" "%1"')
             winreg.CloseKey(command_key)
@@ -186,7 +210,7 @@ class Installer:
                 "Right-click any file and select 'Verify Hash' to use it.")
             
             self.window.quit()
-            
+        
         except PermissionError:
             messagebox.showerror("Permission Denied",
                 "Failed to write to Program Files.\n\n"
@@ -199,7 +223,7 @@ class Installer:
                 f"Failed to install Hash Verifier:\n\n{str(e)}")
     
     def run(self):
-        """Start the application main loop."""
+        """Start the application main event loop."""
         self.window.mainloop()
 
 
