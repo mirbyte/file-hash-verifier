@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import messagebox
 import time
 
-# DPI Awareness
+# Enable DPI awareness for high-resolution displays
 try:
     ctypes.windll.shcore.SetProcessDpiAwarenessContext(-2)
 except (AttributeError, OSError):
@@ -19,19 +19,20 @@ except (AttributeError, OSError):
         except (AttributeError, OSError):
             pass
 
-# Constants
+# Application constants
 WINDOW_WIDTH = 700
 WINDOW_HEIGHT = 600
 
 
 class Uninstaller:
-    """
-    Uninstaller for Hash Verifier that removes program files
-    and registry entries from the system.
+    """Windows uninstaller for Hash Verifier application.
+    
+    Removes program files from Program Files and cleans up Windows Explorer
+    context menu registry entries. Requires administrator privileges.
     """
     
     def __init__(self):
-        """Initialize uninstaller and check for admin privileges."""
+        """Initialize uninstaller and elevate to administrator if needed."""
         if not self.is_admin():
             self.run_as_admin()
             sys.exit(0)
@@ -46,10 +47,10 @@ class Uninstaller:
         self.setup_gui()
     
     def is_admin(self):
-        """
-        Check if running with administrator privileges.
+        """Check if process has administrator privileges.
         
-        :return: True if admin, False otherwise
+        Returns:
+            True if running as administrator, False otherwise
         """
         try:
             return ctypes.windll.shell32.IsUserAnAdmin()
@@ -57,13 +58,19 @@ class Uninstaller:
             return False
     
     def run_as_admin(self):
-        """Restart the program with administrator privileges."""
+        """Relaunch the uninstaller with administrator privileges via UAC prompt.
+        
+        Raises:
+            SystemExit: Always exits after triggering elevation
+        """
         try:
             if getattr(sys, 'frozen', False):
+                # Relaunch compiled executable
                 ctypes.windll.shell32.ShellExecuteW(
                     None, "runas", sys.executable, "", None, 1
                 )
             else:
+                # Relaunch Python script
                 ctypes.windll.shell32.ShellExecuteW(
                     None, "runas", sys.executable, f'"{__file__}"', None, 1
                 )
@@ -72,10 +79,11 @@ class Uninstaller:
             sys.exit(1)
     
     def setup_gui(self):
-        """Set up the graphical user interface."""
+        """Construct the uninstaller GUI with status information and controls."""
         main_frame = tk.Frame(self.window, padx=20, pady=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Introduction text
         info = tk.Label(main_frame,
             text="This will remove Hash Verifier from your system.\n\n"
                  "This will:\n"
@@ -86,6 +94,7 @@ class Uninstaller:
             justify=tk.LEFT)
         info.pack(anchor=tk.W, pady=(0, 20))
         
+        # Current installation status
         details_frame = tk.LabelFrame(main_frame, text="Current Status",
             padx=15, pady=15, font=("Segoe UI", 9, "bold"))
         details_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
@@ -93,6 +102,7 @@ class Uninstaller:
         registry_installed = self.is_registry_installed()
         files_exist = os.path.exists(self.install_dir)
         
+        # Registry status
         if registry_installed:
             status1 = tk.Label(details_frame, text="✓ Context menu entry is installed",
                 font=("Segoe UI", 9), fg="#00aa00")
@@ -101,6 +111,7 @@ class Uninstaller:
                 font=("Segoe UI", 9), fg="#666666")
         status1.pack(anchor=tk.W, pady=2)
         
+        # File system status
         if files_exist:
             status2 = tk.Label(details_frame, text=f"✓ Program files exist in {self.install_dir}",
                 font=("Segoe UI", 9), fg="#00aa00")
@@ -109,10 +120,12 @@ class Uninstaller:
                 font=("Segoe UI", 9), fg="#666666")
         status2.pack(anchor=tk.W, pady=2)
         
+        # Warning if already uninstalled
         if not registry_installed and not files_exist:
             tk.Label(details_frame, text="\n⚠ Hash Verifier appears to be already uninstalled",
                 font=("Segoe UI", 9, "bold"), fg="#ff6600").pack(anchor=tk.W)
         
+        # Action buttons
         button_frame = tk.Frame(main_frame)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(20, 0))
         
@@ -127,10 +140,10 @@ class Uninstaller:
         uninstall_btn.pack(side=tk.RIGHT)
     
     def is_registry_installed(self):
-        """
-        Check if the registry entry exists.
+        """Check if context menu registry entry exists.
         
-        :return: True if installed, False otherwise
+        Returns:
+            True if registry key exists, False otherwise
         """
         try:
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
@@ -144,14 +157,20 @@ class Uninstaller:
             return False
     
     def delete_registry_key_recursive(self, key, subkey):
-        """
-        Recursively delete a registry key and all its subkeys.
+        """Recursively delete a registry key and all its subkeys.
         
-        :param key: Root registry key
-        :param subkey: Path to subkey
+        Windows requires deletion of all subkeys before deleting parent key.
+        
+        Args:
+            key: Root registry key constant (e.g., winreg.HKEY_CURRENT_USER)
+            subkey: Path to subkey to delete
+            
+        Raises:
+            Exception: If deletion fails due to permissions or other errors
         """
         try:
             with winreg.OpenKey(key, subkey, 0, winreg.KEY_ALL_ACCESS) as handle:
+                # Enumerate all subkeys
                 subkeys = []
                 try:
                     i = 0
@@ -159,25 +178,36 @@ class Uninstaller:
                         subkeys.append(winreg.EnumKey(handle, i))
                         i += 1
                 except OSError:
-                    pass
+                    pass  # No more subkeys
                 
+                # Recursively delete all subkeys first
                 for sk in subkeys:
                     self.delete_registry_key_recursive(key, f"{subkey}\\{sk}")
             
+            # Delete the key itself after all subkeys are removed
             winreg.DeleteKey(key, subkey)
         except FileNotFoundError:
-            pass
+            pass  # Key doesn't exist, nothing to delete
         except Exception as e:
             raise e
     
     def remove_directory_with_retry(self, path, retries=3, delay=0.5):
-        """
-        Remove directory with retry logic for locked files.
+        """Remove directory with retry logic for handling locked files.
         
-        :param path: Directory path to remove
-        :param retries: Number of retry attempts
-        :param delay: Delay between retries in seconds
-        :return: True if successful
+        Files may be locked by Windows Explorer or antivirus software.
+        Retrying after a short delay often allows successful deletion.
+        
+        Args:
+            path: Directory path to remove
+            retries: Number of retry attempts
+            delay: Seconds to wait between retries
+            
+        Returns:
+            True if directory was successfully removed
+            
+        Raises:
+            PermissionError: If files remain locked after all retries
+            Exception: For other filesystem errors
         """
         for attempt in range(retries):
             try:
@@ -194,20 +224,26 @@ class Uninstaller:
         return False
     
     def uninstall(self):
-        """Perform the uninstallation process."""
+        """Execute the uninstallation process.
+        
+        Removes registry entries and deletes program files. Continues with
+        file deletion even if registry removal fails.
+        """
         try:
+            # Remove context menu registry entries
             try:
                 self.delete_registry_key_recursive(
                     winreg.HKEY_CURRENT_USER,
                     r"Software\Classes\*\shell\HashVerifier"
                 )
             except FileNotFoundError:
-                pass
+                pass  # Registry entry already removed
             except Exception as e:
                 messagebox.showwarning("Registry Warning",
                     f"Failed to remove registry entries:\n{str(e)}\n\n"
                     "Continuing with file deletion...")
             
+            # Remove program files
             if os.path.exists(self.install_dir):
                 try:
                     self.remove_directory_with_retry(self.install_dir)
@@ -222,13 +258,13 @@ class Uninstaller:
                 "The context menu entry and all program files have been removed.")
             
             self.window.quit()
-            
+        
         except Exception as e:
             messagebox.showerror("Uninstall Failed",
                 f"Failed to uninstall Hash Verifier:\n\n{str(e)}")
     
     def run(self):
-        """Start the application main loop."""
+        """Start the application main event loop."""
         self.window.mainloop()
 
 
