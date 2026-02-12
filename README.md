@@ -144,5 +144,5 @@ Created by [@mirbyte](https://github.com/mirbyte)
 
 ***
 
-**Star ⭐ this repository if you find it useful!**
+**Please star ⭐ this repository if you find it useful!**
 
