@@ -21,9 +21,9 @@ A lightweight Windows application for calculating and verifying file hashes usin
 
 1. Download the latest release from the [releases page](https://github.com/mirbyte/file-hash-verifier/releases)
 2. Extract the ZIP file containing three executables:
-    - `HashVerifier.exe` - Main application
-    - `install.exe` - Installer
-    - `uninstall.exe` - Uninstaller
+    - `HashVerifier.exe`
+    - `install.exe`
+    - `uninstall.exe`
 3. Run `install.exe` to install File Hash Verifier
 4. The installer will automatically add a "Verify Hash" entry to your right-click context menu
 
