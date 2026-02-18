@@ -2,6 +2,11 @@
 
 A lightweight Windows application for calculating and verifying file hashes using multiple algorithms. File Hash Verifier supports MD5, SHA-1, SHA-256, SHA-512, and SHA3-256, with seamless Windows Explorer context menu integration for quick file verification.
 
+[![License](https://img.shields.io/github/license/mirbyte/file-hash-verifier?color=white&maxAge=604800)](https://raw.githubusercontent.com/mirbyte/file-hash-verifier/main/LICENSE)
+![Size](https://img.shields.io/github/repo-size/mirbyte/file-hash-verifier?label=size&color=white&maxAge=86400)
+[![Download Count](https://img.shields.io/github/downloads/mirbyte/file-hash-verifier/total?color=white&maxAge=86400)](https://github.com/mirbyte/file-hash-verifier/releases)
+[![Latest Release](https://img.shields.io/github/release/mirbyte/file-hash-verifier.svg?color=white&maxAge=86400)](https://github.com/mirbyte/file-hash-verifier/releases/latest)
+
 ***
 
 ## Features
