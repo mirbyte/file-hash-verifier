@@ -22,6 +22,7 @@ except (AttributeError, OSError):
             pass
 
 # Application constants
+VERSION = "1.0.1"
 WINDOW_WIDTH = 750
 WINDOW_HEIGHT = 800
 BUFFER_SIZE = 65536  # 64KB chunks balance memory usage with I/O efficiency
@@ -43,7 +44,7 @@ class HashVerifier:
         """
         self.filepath = filepath
         self.window = tk.Tk()
-        self.window.title("Hash Verifier v0.0.2-dev")
+        self.window.title(f"Hash Verifier v{VERSION}")
         self.window.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
         self.window.resizable(True, True)
         
@@ -208,7 +209,7 @@ class HashVerifier:
                     
                     # Update progress bar on main thread
                     bytes_read += len(data)
-                    progress = (bytes_read / filesize) * 100
+                    progress = 100 if filesize == 0 else (bytes_read / filesize) * 100
                     self.window.after(0, lambda p=progress: self.progress_bar.config(value=p))
             
             end_time = time.time()

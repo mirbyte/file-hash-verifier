@@ -36,9 +36,11 @@ A lightweight Windows application for calculating and verifying file hashes usin
 
 ### Uninstall
 
-1. Run `uninstall.exe` from the installation directory or your downloads folder
+1. Run `uninstall.exe` from your original download folder (it is not installed to Program Files)
 2. Confirm the uninstallation
 3. All program files and registry entries will be removed
+
+If you no longer have `uninstall.exe`, download the latest release again and run it from there.
 
 ***
 
